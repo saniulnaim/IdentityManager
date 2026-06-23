@@ -1,0 +1,5 @@
+﻿For add-migration, we need this package: Microsoft.EntityFrameworkCore.Tools
+
+Run in Package Manager Console:
+add-migration 'MeaningName'
+update-database  or		update-database -Project IdentityManager -StartupProject IdentityManager
