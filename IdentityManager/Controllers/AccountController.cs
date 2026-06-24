@@ -3,6 +3,7 @@ using IdentityManager.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Encodings.Web;
 
 namespace IdentityManager.Controllers
@@ -19,20 +20,46 @@ namespace IdentityManager.Controllers
         //}
 
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UrlEncoder _urlEncoder;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, UrlEncoder urlEncoder)
+        public AccountController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, SignInManager<ApplicationUser> signInManager, UrlEncoder urlEncoder)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _signInManager = signInManager;
             _urlEncoder = urlEncoder;
         }
 
-        public IActionResult Register(string returnUrl = null)
+        public async Task<IActionResult> Register(string returnUrl = null)
         {
+            //if (_roleManager.RoleExistsAsync(SD.Admin).GetAwaiter().GetResult())
+            //{
+            //    await _roleManager.CreateAsync(new IdentityRole(SD.Admin));
+            //    await _roleManager.CreateAsync(new IdentityRole(SD.User));
+            //}
+
+            //List<SelectListItem> roleList = new List<SelectListItem>();
+            //roleList.Add(new SelectListItem()
+            //{
+            //    Value = SD.User,
+            //    Text = SD.User
+            //});
+            //roleList.Add(new SelectListItem()
+            //{
+            //    Value = SD.Admin,
+            //    Text = SD.Admin
+            //});
+            var roleList = _roleManager.Roles.Select(r => new SelectListItem
+            {
+                Value = r.Name,
+                Text = r.Name
+            }).ToList();
+
             ViewData["ReturnUrl"] = returnUrl;
             RegisterViewModel model = new RegisterViewModel();
+            model.RoleList = roleList;
             return View(model);
         }
 
@@ -61,6 +88,15 @@ namespace IdentityManager.Controllers
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
+                    if(model.RoleSelected != null && model.RoleSelected.Length > 0 && model.RoleSelected == SD.Admin)
+                    {
+                        await _userManager.AddToRoleAsync(user, SD.Admin);
+                    }
+                    else
+                    {
+                        await _userManager.AddToRoleAsync(user, SD.User);
+                    }
+
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
                     var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userid = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
@@ -74,6 +110,13 @@ namespace IdentityManager.Controllers
 
                 AddErrors(result);
             }
+
+            var roleList = _roleManager.Roles.Select(r => new SelectListItem
+            {
+                Value = r.Name,
+                Text = r.Name
+            }).ToList();
+            model.RoleList = roleList;
             return View(model);
         }
 
@@ -201,6 +244,12 @@ namespace IdentityManager.Controllers
 
         [HttpGet]
         public IActionResult Lockout()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult NoAccess()
         {
             return View();
         }

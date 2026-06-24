@@ -14,6 +14,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders(); // AddDefaultTokenProviders => we use this for _userManager.GeneratePasswordResetTokenAsync
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    //options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/NoAccess";
+});
 
 builder.Services.Configure<IdentityOptions>(options =>
 {

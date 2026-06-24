@@ -24,6 +24,15 @@
             <input asp-for="ConfirmPassword" class="form-control" />
             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
         </div>
+
+        <div class="form-group">
+            <label asp-for="RoleSelected">Role</label>
+            <select asp-for="RoleSelected" class="form-control" asp-items="Model.RoleList">
+                <option disabled value="">Select Role</option>
+            </select>
+            <span asp-validation-for="RoleSelected" class="text-danger"></span>
+        </div>
+
         <button type="submit" class="btn btn-primary">Register</button>
     </form>
 </div>
