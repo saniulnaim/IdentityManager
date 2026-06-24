@@ -96,11 +96,100 @@ namespace IdentityManager.Controllers
                     // return RedirectToAction("Index", "Home");
                     return LocalRedirect(returnUrl);
                 }
+                if (result.IsLockedOut)
+                {
+                    return RedirectToAction("Lockout");
+                }
 
                 ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             }
 
             return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult Lockout()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    return RedirectToAction("ForgotPasswordConfirmation");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userid = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+
+                // Send email with this link
+
+
+                return RedirectToAction(nameof(ForgotPasswordConfirmation));
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ForgotPasswordConfirmation()
+        {
+            // SendEmail
+          
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string code = null)
+        {
+            if (code == null)
+            {
+                return BadRequest("A code must be supplied for password reset.");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                return RedirectToAction("ResetPasswordConfirmation");
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+            if (result.Succeeded)
+            {
+                return RedirectToAction("ResetPasswordConfirmation");
+            }
+
+            AddErrors(result);
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
         }
 
         private void AddErrors(IdentityResult result)

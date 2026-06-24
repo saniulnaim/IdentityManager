@@ -12,7 +12,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 //builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders(); // AddDefaultTokenProviders => we use this for _userManager.GeneratePasswordResetTokenAsync
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
@@ -21,6 +22,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Lockout.MaxFailedAccessAttempts = 1;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
     options.SignIn.RequireConfirmedEmail = false;
 });
 
