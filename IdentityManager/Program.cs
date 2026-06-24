@@ -21,8 +21,8 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
-    options.Lockout.MaxFailedAccessAttempts = 1;
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+    options.Lockout.MaxFailedAccessAttempts = 50;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
     options.SignIn.RequireConfirmedEmail = false;
 });
 
