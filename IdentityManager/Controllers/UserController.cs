@@ -3,6 +3,7 @@ using IdentityManager.Models;
 using IdentityManager.Models.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace IdentityManager.Controllers
 {
@@ -136,6 +137,66 @@ namespace IdentityManager.Controllers
 
             _context.ApplicationUsers.Remove(user);
             _context.SaveChanges();
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        public async Task<IActionResult> ManageUserClaim(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            var model = new ClaimsViewModel()
+            {
+                User = user
+            };
+
+            foreach (var claim in ClaimStore.claims)
+            {
+                ClaimsSelection userClaim = new ClaimsSelection()
+                {
+                    ClaimType = claim.Type
+                };
+
+                if (userClaims.Any(r => r.Type == claim.Type))
+                {
+                    userClaim.IsSelected = true;
+                }
+                model.Claims.Add(userClaim);
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ManageUserClaim(ClaimsViewModel model)
+        {
+            var user = await _userManager.FindByIdAsync(model.User.Id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var oldClaims = await _userManager.GetClaimsAsync(user);
+            var result = await _userManager.RemoveClaimsAsync(user, oldClaims);
+
+            if (!result.Succeeded)
+            {
+                return View(model);
+            }
+
+            result = await _userManager.AddClaimsAsync(user, model.Claims.Where(a => a.IsSelected).Select(_ => new Claim(_.ClaimType, _.IsSelected.ToString())));
+
+            if (!result.Succeeded)
+            {
+                return View(result);
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
