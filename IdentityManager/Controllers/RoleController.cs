@@ -1,5 +1,6 @@
 ﻿using IdentityManager.Data;
 using IdentityManager.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -77,6 +78,8 @@ namespace IdentityManager.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        //[Authorize(Roles = SD.SuperAdmin)]
+        [Authorize(Policy = "OnlySuperAdminChecker")]
         public async Task<IActionResult> Delete(string roleId)
         {
             var role = await _roleManager.FindByIdAsync(roleId);

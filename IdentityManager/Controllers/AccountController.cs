@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 
 namespace IdentityManager.Controllers
@@ -76,7 +77,8 @@ namespace IdentityManager.Controllers
                 {
                     UserName = model.Email,
                     Email = model.Email,
-                    Name = model.Name
+                    Name = model.Name,
+                    DateCreated = DateTime.Now,
                 };
                 //var user = new IdentityUser
                 //{
@@ -182,6 +184,16 @@ namespace IdentityManager.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
                 if (result.Succeeded)
                 {
+                    var user = await _userManager.GetUserAsync(User);
+                    var claim = await _userManager.GetClaimsAsync(user);
+
+                    if(claim.Count > 0)
+                    {
+                        await _userManager.RemoveClaimAsync(user, claim.FirstOrDefault(u => u.Type == "FirstName"));
+                    }
+
+                    await _userManager.AddClaimAsync(user, new Claim("FirstName", user.Name));
+
                     // return RedirectToAction("Index", "Home");
                     return LocalRedirect(returnUrl);
                 }

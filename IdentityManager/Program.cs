@@ -1,5 +1,11 @@
+using IdentityManager;
+using IdentityManager.Authorize;
 using IdentityManager.Data;
+using IdentityManager.Helpers;
+using IdentityManager.IService;
 using IdentityManager.Models;
+using IdentityManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +35,35 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Lockout.MaxFailedAccessAttempts = 50;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
     options.SignIn.RequireConfirmedEmail = false;
+});
+
+
+builder.Services.AddScoped<INumberOfDaysForAccount, NumberOfDaysForAccount>();
+builder.Services.AddScoped<IAuthorizationHandler, AdminWithMoreThan1000DaysHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, FirstNameAuthHandler>();
+
+// For Policy
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole(SD.Admin));
+    options.AddPolicy("AdminAndUser", policy => policy.RequireRole(SD.Admin).RequireRole(SD.User));
+    options.AddPolicy("AdminRole_CreateClaim", policy => policy.RequireRole(SD.Admin).RequireClaim("Create", "True")); // The Create is comming from db
+
+    options.AddPolicy("AdminRole_CreateEditDeleteClaim", policy => policy
+            .RequireRole(SD.Admin)
+            .RequireClaim("Create", "True")
+            .RequireClaim("Edit", "True")
+            .RequireClaim("Delete", "True"));
+
+    options.AddPolicy("AdminRole_CreateEditDeleteClaim_ORSuperAdminRole", policy => policy.RequireAssertion(context => new PolicyHelver().AdminRole_CreateEditDeleteClaim_ORSuperAdminRole(context)
+    ));
+
+    options.AddPolicy("OnlySuperAdminChecker", p => p.Requirements.Add(new OnlySuperAdminChecker()));
+
+
+    options.AddPolicy("AdminWIthMoreTHan1000Days", p => p.Requirements.Add(new AdminWithMoreThan1000DaysRequirement(1000)));
+
+    options.AddPolicy("FirstNameAuth", p => p.Requirements.Add(new FirstNameAuthRequirement("test4")));
 });
 
 var app = builder.Build();
